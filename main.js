@@ -51,10 +51,11 @@ async function run() {
       makeRequest(sandboxApiToken, projectId, email, "5"),
     ]);
 
-    const certificateIds = result.map(({ data }) => data.certificateId);
-    certificateIds.sort();
+    const certificateIds = result.map(({ data }) => data.certificateId).sort();
+    const orderIds = result.map(({ data }) => data.orderId).sort();
 
     console.log("certificateIds", certificateIds);
+    console.log("orderIds", orderIds);
 
     for (const i = 0; i < certificateIds.length - 1; i++) {
       if (certificateIds[i] === certificateIds[i + 1]) {
