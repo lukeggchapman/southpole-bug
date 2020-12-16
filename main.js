@@ -1,5 +1,6 @@
 const axios = require("axios");
 const querystring = require("querystring");
+const pLimit = require("p-limit");
 
 const client = axios.create({
   baseURL: "https://sandbox.market-api.southpole.com/api",
@@ -7,7 +8,7 @@ const client = axios.create({
 
 const makeRequest = async (token, projectId, billingEmail, requestId) => {
   const timeLabel = `timing request ${requestId}`;
-  console.log(`started request ${requestId}`);
+  console.log(`started request ${requestId} at ${Date.now()}`);
   console.time(timeLabel);
 
   const result = await client.post(
@@ -31,24 +32,55 @@ const makeRequest = async (token, projectId, billingEmail, requestId) => {
   return result;
 };
 
-const delay = (ms) => (fn) => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(fn()), ms);
-  });
+const getIntervalCurry = (offset) => {
+  let count = 0;
+  let timeout = null;
+
+  const resetCount = () => {
+    if (timeout) {
+      timeout.refresh();
+      return;
+    }
+
+    timeout = setTimeout(() => {
+      count = 0;
+      timeout = null;
+    }, offset);
+  };
+
+  return () => {
+    resetCount();
+    const result = count * offset;
+    count++;
+    return result;
+  };
+};
+
+/** Limits concurrency and offsets the start of each promise */
+const limitOffset = (concurrency, offsetMs) => {
+  const limit = pLimit(concurrency);
+  const getInterval = getIntervalCurry(offsetMs);
+  return (fn, ...args) =>
+    limit(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(fn(...args)), getInterval());
+      });
+    });
 };
 
 async function run() {
   const sandboxApiToken = "<API Token>";
   const projectId = "<Project ID>";
   const email = "<Email Address>";
+  const limit = limitOffset(5, 2000);
 
   try {
     const result = await Promise.all([
-      makeRequest(sandboxApiToken, projectId, email, "1"),
-      makeRequest(sandboxApiToken, projectId, email, "2"),
-      makeRequest(sandboxApiToken, projectId, email, "3"),
-      makeRequest(sandboxApiToken, projectId, email, "4"),
-      makeRequest(sandboxApiToken, projectId, email, "5"),
+      limit(() => makeRequest(sandboxApiToken, projectId, email, "1")),
+      limit(() => makeRequest(sandboxApiToken, projectId, email, "2")),
+      limit(() => makeRequest(sandboxApiToken, projectId, email, "3")),
+      limit(() => makeRequest(sandboxApiToken, projectId, email, "4")),
+      limit(() => makeRequest(sandboxApiToken, projectId, email, "5")),
     ]);
 
     const certificateIds = result.map(({ data }) => data.certificateId).sort();
@@ -57,7 +89,7 @@ async function run() {
     console.log("certificateIds", certificateIds);
     console.log("orderIds", orderIds);
 
-    for (const i = 0; i < certificateIds.length - 1; i++) {
+    for (let i = 0; i < certificateIds.length - 1; i++) {
       if (certificateIds[i] === certificateIds[i + 1]) {
         throw new Error("Conflicting results returned");
       }
