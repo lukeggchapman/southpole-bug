@@ -1,6 +1,5 @@
 const axios = require("axios");
 const querystring = require("querystring");
-const pLimit = require("p-limit");
 
 const client = axios.create({
   baseURL: "https://sandbox.market-api.southpole.com/api",
@@ -32,42 +31,6 @@ const makeRequest = async (token, projectId, billingEmail, requestId) => {
   return result;
 };
 
-const getIntervalCurry = (offset) => {
-  let count = 0;
-  let timeout = null;
-
-  const resetCount = () => {
-    if (timeout) {
-      timeout.refresh();
-      return;
-    }
-
-    timeout = setTimeout(() => {
-      count = 0;
-      timeout = null;
-    }, offset);
-  };
-
-  return () => {
-    resetCount();
-    const result = count * offset;
-    count++;
-    return result;
-  };
-};
-
-/** Limits concurrency and offsets the start of each promise */
-const limitOffset = (concurrency, offsetMs) => {
-  const limit = pLimit(concurrency);
-  const getInterval = getIntervalCurry(offsetMs);
-  return (fn, ...args) =>
-    limit(() => {
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(fn(...args)), getInterval());
-      });
-    });
-};
-
 async function run() {
   const sandboxApiToken = "<API Token>";
   const projectId = "<Project ID>";
@@ -76,11 +39,11 @@ async function run() {
 
   try {
     const result = await Promise.all([
-      limit(() => makeRequest(sandboxApiToken, projectId, email, "1")),
-      limit(() => makeRequest(sandboxApiToken, projectId, email, "2")),
-      limit(() => makeRequest(sandboxApiToken, projectId, email, "3")),
-      limit(() => makeRequest(sandboxApiToken, projectId, email, "4")),
-      limit(() => makeRequest(sandboxApiToken, projectId, email, "5")),
+      makeRequest(sandboxApiToken, projectId, email, "1"),
+      makeRequest(sandboxApiToken, projectId, email, "2"),
+      makeRequest(sandboxApiToken, projectId, email, "3"),
+      makeRequest(sandboxApiToken, projectId, email, "4"),
+      makeRequest(sandboxApiToken, projectId, email, "5"),
     ]);
 
     const certificateIds = result.map(({ data }) => data.certificateId).sort();
