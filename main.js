@@ -65,7 +65,7 @@ const checkRequest = async ({
   if (
     orderDetails.total_credits === requestInput.tonnes &&
     orderDetails.name ===
-      `API ${requestInput.firstName} ${requestInput.lastName}` &&
+      `Reservation ${requestInput.firstName} ${requestInput.lastName}` &&
     orderDetails.projects[0].no === requestInput.projectId
   ) {
     console.log(
@@ -112,6 +112,41 @@ const orders = [
   {
     requestId: "5",
     firstName: "Five",
+    lastName: "Pathzero",
+    projectId: 302222,
+    tonnes: 5,
+  },
+  {
+    requestId: "6",
+    firstName: "Six",
+    lastName: "Pathzero",
+    projectId: 302745,
+    tonnes: 1,
+  },
+  {
+    requestId: "7",
+    firstName: "Seven",
+    lastName: "Pathzero",
+    projectId: 302222,
+    tonnes: 2,
+  },
+  {
+    requestId: "8",
+    firstName: "Eight",
+    lastName: "Pathzero",
+    projectId: 300180,
+    tonnes: 3,
+  },
+  {
+    requestId: "9",
+    firstName: "Nine",
+    lastName: "Pathzero",
+    projectId: 302745,
+    tonnes: 4,
+  },
+  {
+    requestId: "10",
+    firstName: "Ten",
     lastName: "Pathzero",
     projectId: 302222,
     tonnes: 5,
